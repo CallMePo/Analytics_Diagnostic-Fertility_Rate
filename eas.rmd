@@ -1,0 +1,123 @@
+---
+title: "R Notebook"
+output: html_document
+---
+
+
+```{r}
+# Load the data
+# Load the datasets
+form <- read.csv('datasets/Angka Kelahiran Hasil Long Form SP2020 Menurut Kelompok Umur Ibu (Age Spesific Fertility Rate_ASFR) da.csv')
+total <- read.csv('datasets/Angka Kelahiran Total _ Total Fertility Rate (TFR) Hasil Long Form (LF) SP2020 Menurut Provinsi_Kabupa.csv')
+
+# Merge the data frames on 'Provinsi/Kabupaten/Kota'
+df <- merge(form, total, by='Provinsi/Kabupaten/Kota')
+
+# Drop specified columns
+drop_column <- c('idx', 'id', 'Unnamed: 3')
+df <- df[, !(names(df) %in% drop_column)]
+
+# Set the index to 'Provinsi/Kabupaten/Kota'
+df_indexed <- df[ , c('Provinsi/Kabupaten/Kota', setdiff(names(df), 'Provinsi/Kabupaten/Kota'))]
+
+# Print or return df_indexed as needed
+print(df_indexed)
+```
+drop collumns that not make sense
+```{r}
+summary_df <- summary(df_indexed)
+summary_df <- round(summary_df, 3)
+print(summary_df)
+
+```
+Encode deskripsi_pembangunan
+```{r}
+df$deskripsi_pembangunan <- as.numeric(as.factor(df$deskripsi_pembangunan))
+```
+```{r}
+df<-scale(df)
+```
+
+compare
+```{r}
+library(ggplot2)
+plot(df$luasan_pengerjaan,df$panjang_jalan,type='p',col="red")
+plot(df$luasan_pengerjaan,df$lebar_jalan,type='p',col="blue")
+#plot(df$luasan_pengerjaan,df$deskripsi_pembangunan, type='p',col="green")
+boxplot(df$luasan_pengerjaan,df$panjang_jalan)
+boxplot(df$luasan_pengerjaan,df$lebar_jalan)
+```
+```{r}
+
+```
+```{r}
+x<-df$panjang_jalan
+y<-df$luasan_pengerjaan
+plot(y~x)
+models<-lm(y~x)
+abline(models)
+
+x1<-df$lebar_jalan
+y1<-df$luasan_pengerjaan
+plot(y1~x1)
+models1<-lm(y1~x1)
+abline(models1)
+```
+```{r}
+plot_ss(y,x, showSquares = TRUE)
+plot_ss(y1,x1, showSquares = TRUE)
+plot_ss(y2,x2, showSquares = TRUE)
+```
+```{r}
+cor(y,x)
+cor(y1,x1)
+cor(y2,x2)
+```
+```{r}
+summary(models)
+summary(models1)
+summary(models2)
+```
+```{r}
+hist(models$residuals)
+hist(models1$residuals)
+hist(models2$residuals)
+```
+```{r}
+qqnorm(models$residuals)
+qqline(models$residuals)
+
+qqnorm(models1$residuals)
+qqline(models1$residuals)
+
+qqnorm(models2$residuals)
+qqline(models2$residuals)
+```
+```{r}
+library(corrplot)
+num.cols<-sapply(df, is.numeric)
+cor.data<-cor(df[,num.cols])
+cor.data
+corrplot(cor.data,method='color')
+
+model_simple<-lm(luasan_pengerjaan~panjang_jalan,data=df)
+summary(model_simple)
+
+library(broom)
+tidy(model_simple)
+model_multiple <- lm(luasan_pengerjaan ~ panjang_jalan + lebar_jalan + deskripsi_pembangunan,data=df)
+summary(model_multiple)
+
+
+library(caTools)
+set.seed(101)
+sample<-sample.split(df$panjang_jalan,SplitRatio=0.70)
+train=subset(df,sample==TRUE)
+test=subset(df,sample==FALSE)
+model<-lm(luasan_pengerjaan~.,train)
+summary(model)
+
+res<-residuals(model)
+res<-as.data.frame(res)
+head(res)
+```
